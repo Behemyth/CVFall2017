@@ -1,6 +1,7 @@
 import cv2         
 import numpy as np
 import scipy.sparse
+import scipy.sparse.linalg
 
 # imports
 import os
@@ -64,6 +65,42 @@ def poisson(source,target, bitmask):
 
 	coeff = coeff.tocsr()
 
+	#solve for r
+	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 0])
+
+	#can be 318 or <0, so clamp
+	m = x > 255
+	x[m] = 255
+
+	m = x < 0
+	x[m] = 0
+
+	rCol = x
+
+	#solve for g
+	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 1])
+
+	#can be 318 or <0, so clamp
+	m = x > 255
+	x[m] = 255
+
+	m = x < 0
+	x[m] = 0
+
+	gCol = x
+
+	#solve for b
+	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 2])
+
+	#can be 318 or <0, so clamp
+	m = x > 255
+	x[m] = 255
+
+	m = x < 0
+	x[m] = 0
+
+	bCol = x
+
 
 	'''
 	#mix the gradients
@@ -73,13 +110,8 @@ def poisson(source,target, bitmask):
 	bGradientSource = (alpha) * bGradientSource + (1 - alpha) * bGradientTarget
 	'''
 
-	#get the colors
-	rCol = coeff / rGradient
-	gCol = coeff / gGradient
-	bCol = coeff / bGradient
-
 	#wrap into one image
-	colors = npm.concatonate(rCol,gCol,bCol, axis = 2)
+	colors = np.concatenate((rCol,gCol,bCol))
 
 	result += colors * mask
 	return result
