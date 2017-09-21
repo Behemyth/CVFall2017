@@ -8,6 +8,12 @@ import random
 import sys
 import math
 
+def gradient(img,y,x):
+	grad = np.array([0.0, 0.0, 0.0])
+	grad = img[y, x] * 4 - img[y + 1, x] - img[y - 1, x] - img[y, x + 1] - img[y, x - 1]
+
+	return grad
+
 def poisson(source,target, bitmask):
 	height = source.shape[0]
 	width = source.shape[1]
@@ -16,44 +22,56 @@ def poisson(source,target, bitmask):
 	mask = np.broadcast_to(bitmask == 0, result.shape)
 	result = target * mask
 
-	mask = np.invert(mask)
-
 	product = target.shape[0] * target.shape[1]
-	coeff = scipy.sparse.identity(product, format='dia')
+	coeff = scipy.sparse.identity(product, format='lil')
+	gradients = np.zeros((product, 3))
 
-	#process coefficients
-	'''
+
+	#process coefficients and gradients
+
 	for y in range(height):
 		for x in range(width):
-			if not mask[y,x,1]:
-				print(y,x)
-				index = x+y*width
+			if mask[y,x,0]:
+				index = x + y * width
+				f_star = np.array([0.0, 0.0, 0.0])
+
+				if mask[i - 1, j] == 1:
+					coeff[index, index - 1] = -1
+				else:
+					f_star += target[i - 1, j]
+
+				if mask[i + 1, j] == 1:
+					coeff[index, index + 1] = -1
+				else:
+					f_star += target[i + 1, j]
+
+				if mask[i, j - 1] == 1:
+					coeff[index, index - hm] = -1
+				else:
+					f_star += target[i, j - 1]
+
+				if mask[i, j + 1] == 1:
+					coeff[index, index + hm] = -1
+				else:
+					f_star += target[i, j + 1]
+
 				coeff[index, index] = 4
-				if index+1 < product:
-					coeff[index, index+1] = -1
-				if index-1 >= 0:
-					coeff[index, index-1] = -1
-				if index+width < product:
-					coeff[index, index+width] = -1
-				if index-width >= 0:
-					coeff[index, index-width] = -1
+				gradients[index] = gradient(y, x) + f_star
+			else:
+				index = x + y * width
+				gradients[index] = target[y, x]
+
+
+	coeff = coeff.tocsr()
+
+
 	'''
-
-
-	#calculate gradients
-	rGradientTarget = None
-	gGradientTarget = None
-	bGradientTarget = None
-
-	rGradientSource = None
-	gGradientSource = None
-	bGradientSource = None
-
 	#mix the gradients
 	alpha = 0.5
 	rGradientSource = (alpha) * rGradientSource + (1 - alpha) * rGradientTarget
 	gGradientSource = (alpha) * gGradientSource + (1 - alpha) * gGradientTarget
 	bGradientSource = (alpha) * bGradientSource + (1 - alpha) * bGradientTarget
+	'''
 
 	#get the colors
 	rCol = coeff / rGradient
