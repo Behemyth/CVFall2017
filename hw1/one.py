@@ -9,9 +9,22 @@ import random
 import sys
 import math
 
-def gradient(img,y,x):
+def gradient(img,y,x,width,height):
 	grad = np.array([0.0, 0.0, 0.0])
-	grad = img[y, x] * 4 - img[y + 1, x] - img[y - 1, x] - img[y, x + 1] - img[y, x - 1]
+
+
+	grad = img[y, x] * 4
+	if y + 1 < height:
+		grad -= img[y + 1, x]
+
+	if y - 1 >= 0:
+		grad -= img[y - 1, x]
+
+	if x + 1 < width:
+		grad -= img[y, x + 1] 
+	
+	if x - 1 > 0:
+		grad-= img[y, x - 1]
 
 	return grad
 
@@ -36,27 +49,31 @@ def poisson(source,target, bitmask):
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
 
-				if bitmask[y - 1, x] == 1:
-					coeff[index, index - 1] = -1
-				else:
-					tempGradient += target[y - 1, x]
+				if y - 1 >= 0:
+					if bitmask[y - 1, x] == 1:
+						coeff[index, index - 1] = -1
+					else:
+						tempGradient += target[y - 1, x]
 
-				if bitmask[y + 1, x] == 1:
-					coeff[index, index + 1] = -1
-				else:
-					tempGradient += target[y + 1, x]
+				if y + 1:
+					if bitmask[y + 1, x] == 1:
+						coeff[index, index + 1] = -1
+					else:
+						tempGradient += target[y + 1, x]
 
-				if bitmask[y, x - 1] == 1:
-					coeff[index, index - height] = -1
-				else:
-					tempGradient += target[y, x - 1]
+				if x - 1 >= 0:
+					if bitmask[y, x - 1] == 1:
+						coeff[index, index - height] = -1
+					else:
+						tempGradient += target[y, x - 1]
 
-				if bitmask[y, x + 1] == 1:
-					coeff[index, index + height] = -1
-				else:
-					tempGradient += target[y, x + 1]
+				if x + 1 < width:
+					if bitmask[y, x + 1] == 1:
+						coeff[index, index + height] = -1
+					else:
+						tempGradient += target[y, x + 1]
 
-				gradients[index] = gradient(source, y, x) + tempGradient
+				gradients[index] = gradient(source, y, x,width,height) + tempGradient
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
