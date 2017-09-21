@@ -33,7 +33,7 @@ def poisson(source,target, bitmask):
 	width = source.shape[1]
 
 	result = np.zeros((source.shape))
-	mask3 = np.broadcast_to(bitmask == 0, result.shape)
+	mask3 = np.repeat(bitmask, 3, axis = 2)
 	result = target * mask3
 
 	product = target.shape[0] * target.shape[1]
@@ -129,7 +129,7 @@ def poisson(source,target, bitmask):
 	#wrap into one image
 	colors = np.concatenate((rCol,gCol,bCol), axis = 2)
 
-	result += colors * mask
+	result += colors * mask3
 	return result
 
 
@@ -142,10 +142,11 @@ if __name__ == "__main__":
 
 	source = cv2.imread(img1Name)
 	target = cv2.imread(img2Name)
-	bitmask = cv2.imread(bitName)[:,:,:1] #read only one channel (they should all the same)
+	bitmask = cv2.imread(bitName,0).reshape(target.shape[0],target.shape[1],1)#read only one channel (they should all the same)
 
-	mask = bitmask > 0
-	bitmask[mask] = 1
+	bitmask[bitmask < 255] = 0
+	bitmask[bitmask >= 255] = 1
+
 	#bitmask is now either 0 or 1
 	
 	result = poisson(source, target,bitmask)
