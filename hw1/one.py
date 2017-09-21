@@ -56,7 +56,7 @@ def poisson(source,target, bitmask):
 				else:
 					tempGradient += target[y, x + 1]
 
-				gradients[index] = gradient(y, x) + tempGradient
+				gradients[index] = gradient(source, y, x) + tempGradient
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
