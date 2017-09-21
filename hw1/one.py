@@ -33,30 +33,30 @@ def poisson(source,target, bitmask):
 		for x in range(width):
 			if mask[y,x,0]:
 				index = x + y * width
-				f_star = np.array([0.0, 0.0, 0.0])
+				tempGradient = np.array([0.0, 0.0, 0.0])
+				coeff[index, index] = 4
 
 				if mask[i - 1, j] == 1:
 					coeff[index, index - 1] = -1
 				else:
-					f_star += target[i - 1, j]
+					tempGradient += target[i - 1, j]
 
 				if mask[i + 1, j] == 1:
 					coeff[index, index + 1] = -1
 				else:
-					f_star += target[i + 1, j]
+					tempGradient += target[i + 1, j]
 
 				if mask[i, j - 1] == 1:
 					coeff[index, index - hm] = -1
 				else:
-					f_star += target[i, j - 1]
+					tempGradient += target[i, j - 1]
 
 				if mask[i, j + 1] == 1:
 					coeff[index, index + hm] = -1
 				else:
-					f_star += target[i, j + 1]
+					tempGradient += target[i, j + 1]
 
-				coeff[index, index] = 4
-				gradients[index] = gradient(y, x) + f_star
+				gradients[index] = gradient(y, x) + tempGradient
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
