@@ -52,31 +52,32 @@ def poisson(source,target, bitmask):
 				if y - 1 >= 0:
 					if bitmask[y - 1, x] == 1:
 						coeff[index, index - 1] = -1
-					else:
-						tempGradient += target[y - 1, x]
+					#else:
+						#tempGradient += target[y - 1, x]
 
 				if y + 1:
 					if bitmask[y + 1, x] == 1:
 						coeff[index, index + 1] = -1
-					else:
-						tempGradient += target[y + 1, x]
+					#else:
+						#tempGradient += target[y + 1, x]
 
 				if x - 1 >= 0:
 					if bitmask[y, x - 1] == 1:
 						coeff[index, index - height] = -1
-					else:
-						tempGradient += target[y, x - 1]
+					#else:
+						#tempGradient += target[y, x - 1]
 
 				if x + 1 < width:
 					if bitmask[y, x + 1] == 1:
 						coeff[index, index + height] = -1
-					else:
-						tempGradient += target[y, x + 1]
+					#else:
+						#tempGradient += target[y, x + 1]
 
 				gradients[index] = gradient(source, y, x,width,height) + tempGradient
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
+				result[y,x] = target[y, x]
 
 
 	coeff = coeff.tocsr()
