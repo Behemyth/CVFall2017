@@ -75,7 +75,7 @@ def poisson(source,target, bitmask):
 	m = x < 0
 	x[m] = 0
 
-	rCol = x
+	rCol = x.reshape(height,width,1).astype(np.uint8)
 
 	#solve for g
 	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 1])
@@ -87,7 +87,7 @@ def poisson(source,target, bitmask):
 	m = x < 0
 	x[m] = 0
 
-	gCol = x
+	gCol = x.reshape(height,width,1).astype(np.uint8)
 
 	#solve for b
 	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 2])
@@ -99,7 +99,7 @@ def poisson(source,target, bitmask):
 	m = x < 0
 	x[m] = 0
 
-	bCol = x
+	bCol = x.reshape(height,width,1).astype(np.uint8)
 
 
 	'''
@@ -111,7 +111,7 @@ def poisson(source,target, bitmask):
 	'''
 
 	#wrap into one image
-	colors = np.concatenate((rCol,gCol,bCol))
+	colors = np.concatenate((rCol,gCol,bCol), axis = 2)
 
 	result += colors * mask
 	return result
