@@ -20,39 +20,38 @@ def poisson(source,target, bitmask):
 	width = source.shape[1]
 
 	result = np.zeros((source.shape))
-	mask = np.broadcast_to(bitmask == 0, result.shape)
-	result = target * mask
+	mask3 = np.broadcast_to(bitmask == 0, result.shape)
+	result = target * mask3
 
 	product = target.shape[0] * target.shape[1]
 	coeff = scipy.sparse.identity(product, format='lil')
 	gradients = np.zeros((product, 3))
 
-	mask = np.invert(mask)
 	#process coefficients and gradients
 
 	for y in range(height):
 		for x in range(width):
-			if mask[y,x,0]:
+			if bitmask[y,x] == 1:
 				index = x + y * width
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
 
-				if mask[y - 1, x] == 1:
+				if bitmask[y - 1, x] == 1:
 					coeff[index, index - 1] = -1
 				else:
 					tempGradient += target[y - 1, x]
 
-				if mask[y + 1, x] == 1:
+				if bitmask[y + 1, x] == 1:
 					coeff[index, index + 1] = -1
 				else:
 					tempGradient += target[y + 1, x]
 
-				if mask[y, x - 1] == 1:
+				if bitmask[y, x - 1] == 1:
 					coeff[index, index - hm] = -1
 				else:
 					tempGradient += target[y, x - 1]
 
-				if mask[y, x + 1] == 1:
+				if bitmask[y, x + 1] == 1:
 					coeff[index, index + hm] = -1
 				else:
 					tempGradient += target[y, x + 1]
