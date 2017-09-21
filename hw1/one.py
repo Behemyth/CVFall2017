@@ -47,12 +47,12 @@ def poisson(source,target, bitmask):
 					tempGradient += target[y + 1, x]
 
 				if bitmask[y, x - 1] == 1:
-					coeff[index, index - hm] = -1
+					coeff[index, index - height] = -1
 				else:
 					tempGradient += target[y, x - 1]
 
 				if bitmask[y, x + 1] == 1:
-					coeff[index, index + hm] = -1
+					coeff[index, index + height] = -1
 				else:
 					tempGradient += target[y, x + 1]
 
