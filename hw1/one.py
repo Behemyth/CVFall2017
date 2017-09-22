@@ -19,8 +19,6 @@ def poisson(source,target, bitmask):
 	coeff = scipy.sparse.identity(product, format='lil')
 	gradients = np.zeros((product, 3))
 
-	colors = np.zeros(source.shape,source.dtype)
-
 	#process coefficients and gradients
 
 	for y in range(height):
@@ -65,25 +63,24 @@ def poisson(source,target, bitmask):
 						tempGradient += target[y, x + 1]
 
 				gradients[index] = grad + tempGradient
+
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
-				colors[y,x] = target[y, x]
 
 
 	coeff = coeff.tocsr()
+
+	colors = np.zeros(source.shape,source.dtype)
 
 	for i in range(3):
 		x = scipy.sparse.linalg.spsolve(coeff, gradients[:, i])
 
 		#can be 318 or <0, so clamp
-
 		x[x > 255] = 255
 		x[x < 0] = 0
 
-		colors[:,:,i] += x.reshape(height,width).astype(np.uint8)
-
-
+		colors[:,:,i] = x.reshape(height,width).astype(np.uint8)
 
 	'''
 	#mix the gradients
