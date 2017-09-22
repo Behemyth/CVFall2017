@@ -23,8 +23,10 @@ def poisson(source,target, bitmask):
 
 	for y in range(height):
 		for x in range(width):
+
+			index = x + y * width
+
 			if bitmask[y,x] == 1:
-				index = x + y * width
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
 				grad = source[y, x] * 4
@@ -50,7 +52,7 @@ def poisson(source,target, bitmask):
 					grad-= source[y, x - 1]
 
 					if bitmask[y, x - 1] == 1:
-						coeff[index, index - height] = -1
+						coeff[index, index - width] = -1
 					else:
 						tempGradient += target[y, x - 1]
 
@@ -58,14 +60,13 @@ def poisson(source,target, bitmask):
 					grad -= source[y, x + 1] 
 
 					if bitmask[y, x + 1] == 1:
-						coeff[index, index + height] = -1
+						coeff[index, index + width] = -1
 					else:
 						tempGradient += target[y, x + 1]
 
 				gradients[index] = grad + tempGradient
 
 			else:
-				index = x + y * width
 				gradients[index] = target[y, x]
 
 
