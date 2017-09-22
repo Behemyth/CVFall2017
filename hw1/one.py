@@ -13,13 +13,13 @@ def poisson(source,target, bitmask):
 	height = source.shape[0]
 	width = source.shape[1]
 
-	result = np.zeros((source.shape))
 	mask3 = np.repeat(bitmask, 3, axis = 2)
-	result = target * mask3
 
 	product = target.shape[0] * target.shape[1]
 	coeff = scipy.sparse.identity(product, format='lil')
 	gradients = np.zeros((product, 3))
+
+	colors = np.zeros(source.shape,source.dtype)
 
 	#process coefficients and gradients
 
@@ -29,10 +29,10 @@ def poisson(source,target, bitmask):
 				index = x + y * width
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
-				grad = img[y, x] * 4
+				grad = source[y, x] * 4
 
 				if y - 1 >= 0:
-					grad -= img[y - 1, x]
+					grad -= source[y - 1, x]
 
 					if bitmask[y - 1, x] == 1:
 						coeff[index, index - 1] = -1
@@ -40,7 +40,7 @@ def poisson(source,target, bitmask):
 						tempGradient += target[y - 1, x]
 
 				if y + 1 < height:
-					grad -= img[y + 1, x]
+					grad -= source[y + 1, x]
 
 					if bitmask[y + 1, x] == 1:
 						coeff[index, index + 1] = -1
@@ -49,7 +49,7 @@ def poisson(source,target, bitmask):
 						tempGradient += target[y + 1, x]
 
 				if x - 1 >= 0:
-					grad-= img[y, x - 1]
+					grad-= source[y, x - 1]
 
 					if bitmask[y, x - 1] == 1:
 						coeff[index, index - height] = -1
@@ -57,7 +57,7 @@ def poisson(source,target, bitmask):
 						tempGradient += target[y, x - 1]
 
 				if x + 1 < width:
-					grad -= img[y, x + 1] 
+					grad -= source[y, x + 1] 
 
 					if bitmask[y, x + 1] == 1:
 						coeff[index, index + height] = -1
@@ -68,46 +68,23 @@ def poisson(source,target, bitmask):
 			else:
 				index = x + y * width
 				gradients[index] = target[y, x]
-				result[y,x] = target[y, x]
+				colors[y,x] = target[y, x]
 
 
 	coeff = coeff.tocsr()
 
-	#solve for r
-	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 0])
+	for i in range(3):
+		x = scipy.sparse.linalg.spsolve(coeff, gradients[:, i])
 
-	#can be 318 or <0, so clamp
-	m = x > 255
-	x[m] = 255
+		#can be 318 or <0, so clamp
+		m = x > 255
+		x[m] = 255
 
-	m = x < 0
-	x[m] = 0
+		m = x < 0
+		x[m] = 0
 
-	rCol = x.reshape(height,width,1).astype(np.uint8)
+		colors[:,:,i] += x.reshape(height,width).astype(np.uint8)
 
-	#solve for g
-	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 1])
-
-	#can be 318 or <0, so clamp
-	m = x > 255
-	x[m] = 255
-
-	m = x < 0
-	x[m] = 0
-
-	gCol = x.reshape(height,width,1).astype(np.uint8)
-
-	#solve for b
-	x = scipy.sparse.linalg.spsolve(coeff, gradients[:, 2])
-
-	#can be 318 or <0, so clamp
-	m = x > 255
-	x[m] = 255
-
-	m = x < 0
-	x[m] = 0
-
-	bCol = x.reshape(height,width,1).astype(np.uint8)
 
 
 	'''
@@ -118,11 +95,7 @@ def poisson(source,target, bitmask):
 	bGradientSource = (alpha) * bGradientSource + (1 - alpha) * bGradientTarget
 	'''
 
-	#wrap into one image
-	colors = np.concatenate((rCol,gCol,bCol), axis = 2)
-
-	result += colors * mask3
-	return result
+	return colors
 
 
 if __name__ == "__main__":
