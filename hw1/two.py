@@ -1,95 +1,120 @@
 import cv2
 import numpy as np
+import scipy.sparse
+import scipy.sparse.linalg
 
-def gradient(img,y,x):
-	grad = np.array([0.0, 0.0, 0.0])
-	grad = img[y, x] * 4 - img[y + 1, x] - img[y - 1, x] - img[y, x + 1] - img[y, x - 1]
+# imports
+import os
+import random
+import sys
+import math
 
-	return grad
+def poisson(source, bitmask):
+	height = source.shape[0]
+	width = source.shape[1]
 
-def isophote(patch, patchSize):
-	p = patchSize//2+1
-	pGrad = np.array([patch[p,p,:] - patch[p+1,p,:], patch[p,p,:] - patch[p,p+1,:]])
+	mask3 = np.repeat(bitmask, 3, axis = 2)
 
-	return pGrad / np.linalg.norm(pGrad)
+	product = height * width
+	coeff = scipy.sparse.identity(product, format='lil')
+	gradients = np.zeros((product, 3), dtype=np.float)
 
-def orthoomega(bitPatch, patchSize):
-	p = patchSize//2+1
-	small = bitPatch[p-1:p+1,p-1:p+1,:]
-	sobelX = -small[0,0,:] - 2*small[0,1,:] - small[0,2,:] + small[2,0,:] + 2*small[2,1,:] + small[2,2,:]
-	sobelY = -small[0,0,:] - 2*small[1,0,:] - small[2,0,:] + small[0,2,:] + 2*small[1,2,:] + small[2,2,:]
-	sobelVec = np.array([sobelX,sobelY])
-	return sobelVec / np.linalg.norm(sobelVec)
+	#process coefficients and gradients
 
-def confidence(bitPatch, patchSize):
-    total = 0
+	for y in range(height):
+		for x in range(width):
 
-    for i in range(patchSize):
-        for j in range(patchSize):
-            if not bitPatch[i,j]:
-                total += 1
+			index = x + y * width
 
-    return total / (patchSize * patchSize)
+			if bitmask[y,x] == 1:
+				# tempGradient = np.array([0.0, 0.0, 0.0])
+				coeff[index, index] = 4
+				grad = [0.0,0.0,0.0] + source[y, x] * 4.0
 
-def data(patch, bitPatch, patchSize):
-	# p is the coordinate of the center pixel of the patch
-	p = patchSize//2+1
+				if y - 1 >= 0:
+					grad -= source[y - 1, x]
 
-	# find the scalar magnitude of the gradient at p
-    gradMag = np.linalg.norm(np.linalg.norm(gradient(patch, p, p)))
+					if bitmask[y - 1, x] == 1:
+						coeff[index, index - 1] = -1
+					# else:
+						# tempGradient += target[y - 1, x]
 
-	# find the isophote at p
-    isophote = isophote(patch, patchSize)
+				if y + 1 < height:
+					grad -= source[y + 1, x]
 
-	# find the
-	normalAtP = orthoomega(bitPatch, patchSize)
+					if bitmask[y + 1, x] == 1:
+						coeff[index, index + 1] = -1
 
-	return gradMag * np.linalg.norm(np.dot(isophote, normalAtP))
+					# else:
+						# tempGradient += target[y + 1, x]
 
-def inpaint(img, bitMask, patchSize):
-    height = img.shape[0]
-    width = img.shape[1]
+				if x - 1 >= 0:
+					grad-= source[y, x - 1]
 
-	importantX = 0
-	importantY = 0
-	importance = 0
+					if bitmask[y, x - 1] == 1:
+						coeff[index, index - width] = -1
+					# else:
+						# tempGradient += target[y, x - 1]
 
-	# go through every pixel checking its importance
-    for i in range(patchSize // 2 + 1, height - patchSize // 2):
-        for j in range(patchSize // 2 + 1, width - patchSize // 2):
-			# check if pixel is on an edge
-			# we're not too worried about selecting a pixel not on the seam since
-			# confidence would be too low to select it
-            if bitMask[i,j,:]:
-				# select a neighborhood around the current pixel of size patchSize*patchSize
-                bitPatch = bitMask[i-patchSize//2:i+patchSize//2,j-patchSize//2:j+patchSize//2,:]
-                patch = img[i-patchSize//2:i+patchSize//2,j-patchSize//2:j+patchSize//2,:]
+				if x + 1 < width:
+					grad -= source[y, x + 1]
 
-				# compute the confidence and data terms around this pixel
-                cP = confidence(bitPatch, patchSize)
-                dP = data(patch, bitPatch, patchSize)
+					if bitmask[y, x + 1] == 1:
+						coeff[index, index + width] = -1
+					# else:
+						# tempGradient += target[y, x + 1]
 
-				# if the combined score is higher than the highest "importance" score,
-				# select this pixel instead
-				if cP*dP > importance:
-					importance = cP * dP
-					importantY = i
-					importantX = j
+				# gradients[index] = grad
 
-	# now search for the known patch that's most similar and replace our unknown patch
+			else:
+				gradients[index] = source[y, x]
 
-if __name__ == '__main__':
-    inputImgSrc = sys.argv[1]
-    bitMaskSrc = sys.argv[2]
-    outputImgSrc = sys.argv[3]
-    patchSize = sys.argv[4]
 
-    inputImg = cv2.imread(inputImgSrc)
-    bitMask = cv2.imread(bitMaskSrc)[:,:,:1]
+	coeff = coeff.tocsr()
 
-    # set any non-zero values to 1
-    bitMask[bitMask > 0] = 1
+	colors = np.zeros(source.shape,source.dtype)
 
-    outputImg = inpaint(inputImg, bitMask, patchSize)
+	for i in range(3):
+		x = scipy.sparse.linalg.spsolve(coeff, gradients[:, i])
 
-    cv2.imwrite(outputImgSrc, outputImg)
+		#can be 318 or <0, so clamp
+		x[x > 255] = 255
+		x[x < 0] = 0
+
+		colors[:,:,i] = x.reshape(height,width).astype(np.uint8)
+
+	'''
+	#mix the gradients
+	alpha = 0.5
+	rGradientSource = (alpha) * rGradientSource + (1 - alpha) * rGradientTarget
+	gGradientSource = (alpha) * gGradientSource + (1 - alpha) * gGradientTarget
+	bGradientSource = (alpha) * bGradientSource + (1 - alpha) * bGradientTarget
+	'''
+
+	return colors
+
+
+if __name__ == "__main__":
+
+	img1Name = sys.argv[1]
+	bitName = sys.argv[2]
+	imgNameOut = sys.argv[3]
+
+	source = cv2.imread(img1Name)
+	bitmask = cv2.imread(bitName,0).reshape(source.shape[0],source.shape[1],1)#read only one channel (they should all the same)
+
+	bitmask[bitmask < 255] = 0
+	bitmask[bitmask >= 255] = 1
+
+	#bitmask is now either 0 or 1
+
+	result = poisson(source,bitmask)
+
+	'''
+	#OpenCV implementation
+	center = (int(target.shape[1]/2),int(target.shape[0]/2))
+
+	result = cv2.seamlessClone(source, target, bitmask, center, cv2.NORMAL_CLONE)
+	'''
+
+	cv2.imwrite(imgNameOut, result)
