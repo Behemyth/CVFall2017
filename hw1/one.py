@@ -1,4 +1,4 @@
-import cv2         
+import cv2
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
@@ -15,7 +15,7 @@ def poisson(source,target, bitmask):
 
 	mask3 = np.repeat(bitmask, 3, axis = 2)
 
-	product = target.shape[0] * target.shape[1]
+	product = height * width
 	coeff = scipy.sparse.identity(product, format='lil')
 	gradients = np.zeros((product, 3), dtype=np.float)
 
@@ -29,7 +29,7 @@ def poisson(source,target, bitmask):
 			if bitmask[y,x] == 1:
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
-				grad = [0.0,0.0,0.0] + source[y, x] * 4
+				grad = [0.0,0.0,0.0] + source[y, x] * 4.0
 
 				if y - 1 >= 0:
 					grad -= source[y - 1, x]
@@ -57,7 +57,7 @@ def poisson(source,target, bitmask):
 						tempGradient += target[y, x - 1]
 
 				if x + 1 < width:
-					grad -= source[y, x + 1] 
+					grad -= source[y, x + 1]
 
 					if bitmask[y, x + 1] == 1:
 						coeff[index, index + width] = -1
@@ -95,7 +95,7 @@ def poisson(source,target, bitmask):
 
 
 if __name__ == "__main__":
-	
+
 	img1Name = sys.argv[1]
 	img2Name = sys.argv[2]
 	bitName = sys.argv[3]
@@ -109,17 +109,14 @@ if __name__ == "__main__":
 	bitmask[bitmask >= 255] = 1
 
 	#bitmask is now either 0 or 1
-	
+
 	result = poisson(source, target,bitmask)
 
 	'''
 	#OpenCV implementation
 	center = (int(target.shape[1]/2),int(target.shape[0]/2))
-	
+
 	result = cv2.seamlessClone(source, target, bitmask, center, cv2.NORMAL_CLONE)
 	'''
 
 	cv2.imwrite(imgNameOut, result)
-
-
-
