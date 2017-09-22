@@ -77,11 +77,9 @@ def poisson(source,target, bitmask):
 		x = scipy.sparse.linalg.spsolve(coeff, gradients[:, i])
 
 		#can be 318 or <0, so clamp
-		m = x > 255
-		x[m] = 255
 
-		m = x < 0
-		x[m] = 0
+		x[x > 255] = 255
+		x[x < 0] = 0
 
 		colors[:,:,i] += x.reshape(height,width).astype(np.uint8)
 
