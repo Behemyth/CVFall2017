@@ -9,7 +9,7 @@ import random
 import sys
 import math
 
-def poisson(source,target, bitmask):
+def poisson(source, bitmask):
 	height = source.shape[0]
 	width = source.shape[1]
 
@@ -27,7 +27,7 @@ def poisson(source,target, bitmask):
 			index = x + y * width
 
 			if bitmask[y,x] == 1:
-				tempGradient = np.array([0.0, 0.0, 0.0])
+				# tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
 				grad = [0.0,0.0,0.0] + source[y, x] * 4.0
 
@@ -36,8 +36,8 @@ def poisson(source,target, bitmask):
 
 					if bitmask[y - 1, x] == 1:
 						coeff[index, index - 1] = -1
-					else:
-						tempGradient += target[y - 1, x]
+					# else:
+						# tempGradient += target[y - 1, x]
 
 				if y + 1 < height:
 					grad -= source[y + 1, x]
@@ -45,29 +45,29 @@ def poisson(source,target, bitmask):
 					if bitmask[y + 1, x] == 1:
 						coeff[index, index + 1] = -1
 
-					else:
-						tempGradient += target[y + 1, x]
+					# else:
+						# tempGradient += target[y + 1, x]
 
 				if x - 1 >= 0:
 					grad-= source[y, x - 1]
 
 					if bitmask[y, x - 1] == 1:
 						coeff[index, index - width] = -1
-					else:
-						tempGradient += target[y, x - 1]
+					# else:
+						# tempGradient += target[y, x - 1]
 
 				if x + 1 < width:
 					grad -= source[y, x + 1]
 
 					if bitmask[y, x + 1] == 1:
 						coeff[index, index + width] = -1
-					else:
-						tempGradient += target[y, x + 1]
+					# else:
+						# tempGradient += target[y, x + 1]
 
-				gradients[index] = grad + tempGradient
+				# gradients[index] = grad
 
 			else:
-				gradients[index] = target[y, x]
+				gradients[index] = source[y, x]
 
 
 	coeff = coeff.tocsr()
@@ -97,20 +97,18 @@ def poisson(source,target, bitmask):
 if __name__ == "__main__":
 
 	img1Name = sys.argv[1]
-	img2Name = sys.argv[2]
-	bitName = sys.argv[3]
-	imgNameOut = sys.argv[4]
+	bitName = sys.argv[2]
+	imgNameOut = sys.argv[3]
 
 	source = cv2.imread(img1Name)
-	target = cv2.imread(img2Name)
-	bitmask = cv2.imread(bitName,0).reshape(target.shape[0],target.shape[1],1)#read only one channel (they should all the same)
+	bitmask = cv2.imread(bitName,0).reshape(source.shape[0],source.shape[1],1)#read only one channel (they should all the same)
 
 	bitmask[bitmask < 255] = 0
 	bitmask[bitmask >= 255] = 1
 
 	#bitmask is now either 0 or 1
 
-	result = poisson(source, target,bitmask)
+	result = poisson(source,bitmask)
 
 	'''
 	#OpenCV implementation
