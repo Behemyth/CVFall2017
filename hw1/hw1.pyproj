@@ -13,7 +13,7 @@
     <RootNamespace>hw1</RootNamespace>
     <InterpreterId>Global|ContinuumAnalytics|Anaconda36-64</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>bear_small.jpg rocks_small.jpg bear_bitmask_small.bmp bear_out.jpg</CommandLineArguments>
+    <CommandLineArguments>critters_small.jpg couch_small.jpg animals_bitmap_small.bmp animals_mixed_out.jpg</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
