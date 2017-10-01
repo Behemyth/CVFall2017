@@ -21,18 +21,26 @@ def poisson(source,target, bitmask):
 
 	#process coefficients and gradients
 
+	#iterate over all pixels
 	for y in range(height):
 		for x in range(width):
 
+			#grab the coefficient index
 			index = x + y * width
 
+			#only edit where the mask is true
 			if bitmask[y,x] == 1:
 				tempGradient = np.array([0.0, 0.0, 0.0])
 				coeff[index, index] = 4
 				grad = [0.0,0.0,0.0] + source[y, x] * 4.0
 
+				#mixed gradient
+				gradT = [0.0,0.0,0.0] + target[y, x] * 4.0
+				alpha = 0.5
+
 				if y - 1 >= 0:
 					grad -= source[y - 1, x]
+					gradT -= target[y - 1, x]
 
 					if bitmask[y - 1, x] == 1:
 						coeff[index, index - 1] = -1
@@ -41,6 +49,7 @@ def poisson(source,target, bitmask):
 
 				if y + 1 < height:
 					grad -= source[y + 1, x]
+					gradT -= target[y + 1, x]
 
 					if bitmask[y + 1, x] == 1:
 						coeff[index, index + 1] = -1
@@ -50,6 +59,7 @@ def poisson(source,target, bitmask):
 
 				if x - 1 >= 0:
 					grad-= source[y, x - 1]
+					gradT-= target[y, x - 1]
 
 					if bitmask[y, x - 1] == 1:
 						coeff[index, index - width] = -1
@@ -58,13 +68,15 @@ def poisson(source,target, bitmask):
 
 				if x + 1 < width:
 					grad -= source[y, x + 1]
+					gradT -= target[y, x + 1]
 
 					if bitmask[y, x + 1] == 1:
 						coeff[index, index + width] = -1
 					else:
 						tempGradient += target[y, x + 1]
 
-				gradients[index] = grad + tempGradient
+				#gradients[index] = grad + tempGradient
+				gradients[index] = (alpha) * (grad + tempGradient) + (1 - alpha) * (gradT + tempGradient)
 
 			else:
 				gradients[index] = target[y, x]
@@ -74,6 +86,7 @@ def poisson(source,target, bitmask):
 
 	colors = np.zeros(source.shape,source.dtype)
 
+	#iterate over each channel and solve the matrices
 	for i in range(3):
 		x = scipy.sparse.linalg.spsolve(coeff, gradients[:, i])
 
@@ -84,7 +97,7 @@ def poisson(source,target, bitmask):
 		colors[:,:,i] = x.reshape(height,width).astype(np.uint8)
 
 	'''
-	#mix the gradients
+	#mix the gradients (initial implementation)
 	alpha = 0.5
 	rGradientSource = (alpha) * rGradientSource + (1 - alpha) * rGradientTarget
 	gGradientSource = (alpha) * gGradientSource + (1 - alpha) * gGradientTarget
@@ -101,6 +114,7 @@ if __name__ == "__main__":
 	bitName = sys.argv[3]
 	imgNameOut = sys.argv[4]
 
+	#read in all images
 	source = cv2.imread(img1Name)
 	target = cv2.imread(img2Name)
 	bitmask = cv2.imread(bitName,0).reshape(target.shape[0],target.shape[1],1)#read only one channel (they should all the same)
