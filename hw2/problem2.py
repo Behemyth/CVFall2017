@@ -8,7 +8,7 @@ from kivy.core.window import Window
 from kivy.graphics.texture import Texture
 from kivy.graphics import Rectangle
 from kivy.base import runTouchApp
-
+from kivy.graphics import Color, Line
 # imports
 import os
 import random
@@ -16,7 +16,11 @@ import sys
 import math
 
 class SegmentationWidget(Widget):
-    pass
+    def on_touch_down(self, touch):
+        with self.canvas:
+            touch.ud['line'] = Line(points=(touch.x, touch.y))
+    def on_touch_move(self, touch):
+        touch.ud['line'].points += [touch.x, touch.y]
 
 class SegmentationApp(App):
 
