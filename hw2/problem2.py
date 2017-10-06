@@ -241,6 +241,18 @@ class SegmentationWidget(Widget):
         cv2.imwrite('out2.jpg', self.imgOut)
         self.imgOut = np.flip(self.imgOut,axis=0)
 
+        self.wf = np.flip(self.wf,axis=0)
+        cv2.imwrite('fWeights2.jpg', self.wf)
+        self.wf = np.flip(self.wf,axis=0)
+
+        self.wb = np.flip(self.wb, axis=0)
+        cv2.imwrite('bWeights2.jpg', self.wb)
+        self.wb = np.flip(self.wb,axis=0)
+
+        self.w = np.flip(self.w, axis=0)
+        cv2.imwrite('nWeights2.jpg', self.w)
+        self.w = np.flip(self.w,axis=0)
+
     '''
     All the graph work goes here
     '''
@@ -249,8 +261,9 @@ class SegmentationWidget(Widget):
         bHist = cv2.calcHist([self.intensity],[0],self.b.astype(np.uint8),[256],[0,256])
 
         #removed logs for sanity
-        self.wf = -lamb * bHist[self.intensity]
-        self.wb = -lamb * fHist[self.intensity]
+        # #-lamb *log()
+        self.wf = bHist[self.intensity]
+        self.wb =  fHist[self.intensity]
 
         diff = np.abs(np.gradient(self.intensity))
         diff = np.average(diff, axis = 0)
@@ -262,7 +275,7 @@ class SegmentationWidget(Widget):
         # Add the terminal edges. The [2] are the capacities
         # of the edges from the source node. The [3]
         # are the capacities of the edges to the sink node.
-        self.g.add_grid_tedges(self.nodes, self.b, self.f)
+        self.g.add_grid_tedges(self.nodes, self.wb, self.wf)
 
         self.g.maxflow()
 
