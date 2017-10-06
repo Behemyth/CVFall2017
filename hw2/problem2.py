@@ -22,9 +22,41 @@ import math
 class SegmentationWidget(Widget):
     
     def __init__(self, *args, **kwargs):
-        #init the firsttouch and call the super 
+        #init the firsttouch and call the super
         super(SegmentationWidget, self).__init__(*args, **kwargs)
         self.firstTouch = True
+        self.bind(size=self._update_rect, pos=self._update_rect)
+
+        imgName = sys.argv[1]
+        img = cv2.imread(imgName).astype(np.uint8)
+        img = np.flip(img,axis=0)
+        #align image
+
+        self.imgWidth = img.shape[1]
+        self.imgHeight = img.shape[0]
+
+        #attach the image to a texture
+        self.texture = Texture.create(size=(self.imgWidth , self.imgHeight), colorfmt="bgr")
+        self.texture.blit_buffer(img.tostring(), bufferfmt="ubyte", colorfmt="bgr")
+
+        #create the copy
+        
+        self.imgOut = img
+        self.img = img
+
+        img = np.flip(img,axis=0)
+        cv2.imwrite('out.jpg', img)
+
+        #create the graph
+        g = maxflow.Graph[int]()
+        nodeids = g.add_grid_nodes(img.shape)
+        g.add_grid_edges(nodeids, 0)
+
+        self.mask = np.zeros(img.shape, dtype= np.float)
+
+        with self.canvas.before:
+            #attach the texture to the app
+            self.rect = Rectangle(texture=self.texture, size=self.size, pos=self.pos)
 
     def on_touch_down(self, touch):
 
@@ -64,45 +96,51 @@ class SegmentationWidget(Widget):
     def on_touch_up(self, touch):
 
         #TODO update graph based on firstTouch and the lines
+        if self.firstTouch:
+            
+            ys = np.sort([self.yResize(self.Ay),self.yResize(self.Cy)]).astype(np.int)
+            xs = np.sort([self.xResize(self.Ax),self.xResize(self.Cx)]).astype(np.int)
 
+            self.mask[ys[0]:ys[1],xs[0]:xs[1]] = 1.
 
-        #change the draw type
-        self.firstTouch = False
+            #change the draw type
+            self.firstTouch = False
+        else:
+            pass
 
-        #remove the lines and update the graph based on this line       
+        #remove the lines and update the graph based on this line
         self.canvas.clear()
-        
+
+        #create the new image and display it
+        self.imgOut = (self.img * self.mask).astype(np.uint8)
+
+        self.texture.blit_buffer(self.imgOut.tostring(), bufferfmt="ubyte", colorfmt="bgr")
+
+        self.imgOut = np.flip(self.imgOut,axis=0)
+        cv2.imwrite('out.jpg', self.imgOut)
+        self.imgOut = np.flip(self.imgOut,axis=0)
+
+
+    def xResize(self,x):
+        return x / self.size[0] * self.imgWidth
+
+    def yResize(self,y):
+        return y / self.size[1] * self.imgHeight
+
+    def _update_rect(self, instance, value):
+            #resizing app
+            self.rect.pos = instance.pos
+            self.rect.size = instance.size
+
 
 class SegmentationApp(App):
 
     def build(self):
+
         #load the image and pass it to the widget to render
         self.root = root = SegmentationWidget()
-        root.bind(size=self._update_rect, pos=self._update_rect)
-
-        imgName = sys.argv[1]
-        img = cv2.imread(imgName)
     
-        #align image
-        img = np.flip(img,axis=0)
-
-        width = img.shape[1]
-        height = img.shape[0]
-
-        #attach the image to a texture
-        texture = Texture.create(size=(width, height), colorfmt="bgr")
-        texture.blit_buffer(img.tostring(), bufferfmt="ubyte", colorfmt="bgr")
-
-        with root.canvas.before:
-            #attach the texture to the app
-            self.rect = Rectangle(texture=texture, size=root.size, pos=root.pos)
-
         return root
-
-    def _update_rect(self, instance, value):
-        #resizing app
-        self.rect.pos = instance.pos
-        self.rect.size = instance.size
 
 if __name__ == "__main__":
     SegmentationApp().run()
