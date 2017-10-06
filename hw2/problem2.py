@@ -143,8 +143,6 @@ class SegmentationWidget(Widget):
         #create the graph and do initialization
         self.g = maxflow.Graph[int]()
         self.nodes = self.g.add_grid_nodes(self.flatShape)
-        self.structure = np.array([[0, 1, 0],[1, 0, 1],[0, 1, 0]])
-
 
         self.f = np.zeros(self.flatShape)
         self.b = np.full(self.flatShape,np.inf,dtype=np.float)
@@ -204,6 +202,17 @@ class SegmentationWidget(Widget):
 
             #change the draw type
             self.firstTouch = False
+            self.bgdModel = np.zeros((1,65),np.float64)
+            self.fgdModel = np.zeros((1,65),np.float64)
+
+            #the opencv implementation
+            self.mask = np.zeros(self.flatShape,dtype=np.uint8)
+
+            self.mask[self.f == np.inf] = 1
+            self.mask[self.b == np.inf] = 0
+
+            cv2.grabCut(self.img,self.mask,(xs[0],ys[0],xs[1],ys[1]),self.bgdModel,self.fgdModel,5,cv2.GC_INIT_WITH_RECT)
+
         else:
             points = touch.ud['line'].points
             for i in range(1,len(points) // 2):
@@ -226,15 +235,24 @@ class SegmentationWidget(Widget):
                         self.f[data[1]][data[0]] = 0.
                         self.b[data[1]][data[0]] = np.inf
 
+            self.mask[self.f == np.inf] = 1
+            self.mask[self.b == np.inf] = 0
+
+            #the opencv implementation
+            self.mask, self.bgdModel, self.fgdModel =cv2.grabCut(self.img,self.mask,None,self.bgdModel,self.fgdModel,5,cv2.GC_INIT_WITH_MASK)
         
-        #do all the graph stuff
-        segments = self.cut()
+        #do all the graph stuff, our implementation (broken)
+        #segments = self.cut()
 
         #remove the lines and update the graph based on this line
         self.canvas.clear()
 
         #create the new image and display it
-        self.imgOut = (self.img * segments.astype(int)).astype(np.uint8)
+        #self.imgOut = (self.img * segments.astype(int)).astype(np.uint8)
+        
+        #alternatively
+        mask2 = np.where((self.mask==2)|(self.mask==0),0,1).astype('uint8')
+        self.imgOut = self.img*mask2
 
         self.texture.blit_buffer(self.imgOut.tostring(), bufferfmt="ubyte", colorfmt="bgr")
 
@@ -258,29 +276,31 @@ class SegmentationWidget(Widget):
         cv2.imwrite('bWeights2.jpg', self.wb)
         self.wb = np.flip(self.wb,axis=0)
 
-        self.w = np.flip(self.w, axis=0)
-        cv2.imwrite('weights2.jpg', self.w)
-        self.w = np.flip(self.w,axis=0)
-
     '''
     All the graph work goes here
     '''
     def cut(self):
-
-
-        
+     
         fMean = np.average(self.intensity[self.f>=1])
         bMean = np.average(self.intensity[self.b>=1])
 
         self.wf = -lamb * np.log(np.abs(self.intensity - fMean)/(np.abs(self.intensity - fMean)+np.abs(self.intensity - bMean)))
         self.wb = -lamb * np.log(np.abs(self.intensity - bMean)/(np.abs(self.intensity - bMean)+np.abs(self.intensity - fMean)))
 
+        self.wf = np.maximum(self.wf ,self.f )
+        self.wb = np.maximum(self.wb ,self.b )
+
         diff = np.abs(np.gradient(self.intensity.reshape(self.flatestShape)))
-        diff = np.average(diff, axis = 0).reshape(self.flatShape)
-        self.w = np.exp(-np.square(diff) / (2 * np.square(sigma)))
+        #diff = np.average(diff, axis = 0).reshape(self.flatShape)
+        self.wx = np.exp(-np.square(diff[0]) / (2 * np.square(sigma))).reshape(self.flatShape)
+        self.wy = np.exp(-np.square(diff[1]) / (2 * np.square(sigma))).reshape(self.flatShape)
 
         #add the weights to the grid
-        self.g.add_grid_edges(self.nodes, weights=self.w, structure=self.structure,symmetric=False)
+        structureX= np.array([[0, 0, 0],[1, 0, 1],[0, 0, 0]])
+        structureY = np.array([[0, 1, 0],[0, 0, 0],[0, 1, 0]])
+
+        self.g.add_grid_edges(self.nodes, weights=self.wx, structure=structureX,symmetric=False)
+        self.g.add_grid_edges(self.nodes, weights=self.wy, structure=structureY,symmetric=False)
 
         # Add the terminal edges.  The [2] are the capacities
         # of the edges from the source node.  The [3]
