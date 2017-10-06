@@ -133,14 +133,13 @@ class SegmentationWidget(Widget):
         img = np.flip(img,axis=0)
         cv2.imwrite('out2.jpg', img)
 
-        #create the graph
-        g = maxflow.Graph[int]()
-        nodeids = g.add_grid_nodes(img.shape)
-        g.add_grid_edges(nodeids, 0)
+        #create the graph and do initialization
+        self.g = maxflow.Graph[int]()
+        self.nodeids = self.g.add_grid_nodes(img.shape)
+        self.g.add_grid_edges(self.nodeids, 0)
 
-        #create the mask and weights
-        self.mask = np.ones(img.shape, dtype= np.float)
-        self.weights = np.zeros(img.shape, dtype= np.float)
+        self.f = np.zeros(img.shape)
+        self.b = np.full(img.shape,np.inf,dtype=np.float)
 
         with self.canvas.before:
             #attach the texture to the app
@@ -189,7 +188,8 @@ class SegmentationWidget(Widget):
             ys = np.sort([self.yResize(self.Ay),self.yResize(self.Cy)]).astype(np.int)
             xs = np.sort([self.xResize(self.Ax),self.xResize(self.Cx)]).astype(np.int)
 
-            self.mask[ys[0]:ys[1],xs[0]:xs[1]] = 0.
+            self.f[ys[0]:ys[1],xs[0]:xs[1]] = 1.
+            self.b[ys[0]:ys[1],xs[0]:xs[1]] = 0.
 
             #change the draw type
             self.firstTouch = False
@@ -205,15 +205,20 @@ class SegmentationWidget(Widget):
                 for data in buffer:
 
                     if self.isKeep:
-                        self.mask[data[1]][data[0]] = 0.
+                        self.f[data[1]][data[0]] = np.inf
+                        self.b[data[1]][data[0]] = 0.
+
                     else:
-                        self.mask[data[1]][data[0]] = 1.
+                        self.f[data[1]][data[0]] = 0.
+                        self.b[data[1]][data[0]] = np.inf
 
         #remove the lines and update the graph based on this line
         self.canvas.clear()
 
         #create the new image and display it
-        self.imgOut = (self.img * (1. - self.mask)).astype(np.uint8)
+        displayMask = self.f
+        displayMask[displayMask == np.inf] = 1.
+        self.imgOut = (self.img * displayMask).astype(np.uint8)
 
         self.texture.blit_buffer(self.imgOut.tostring(), bufferfmt="ubyte", colorfmt="bgr")
 
