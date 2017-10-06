@@ -241,13 +241,13 @@ class SegmentationWidget(Widget):
         cv2.imwrite('out2.jpg', self.imgOut)
         self.imgOut = np.flip(self.imgOut,axis=0)
 
-        self.wf = np.flip(self.wf,axis=0)
-        cv2.imwrite('fWeights2.jpg', self.wf)
-        self.wf = np.flip(self.wf,axis=0)
+        self.f = np.flip(self.f,axis=0)
+        cv2.imwrite('fWeights2.jpg', self.f)
+        self.f = np.flip(self.f,axis=0)
 
-        self.wb = np.flip(self.wb, axis=0)
-        cv2.imwrite('bWeights2.jpg', self.wb)
-        self.wb = np.flip(self.wb,axis=0)
+        self.b = np.flip(self.b, axis=0)
+        cv2.imwrite('bWeights2.jpg', self.b)
+        self.b = np.flip(self.b,axis=0)
 
         self.w = np.flip(self.w, axis=0)
         cv2.imwrite('nWeights2.jpg', self.w)
