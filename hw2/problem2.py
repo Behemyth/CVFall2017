@@ -22,6 +22,9 @@ import random
 import sys
 import math
 
+sigma = 2
+lamb = 1
+
 '''
 taken from https://stackoverflow.com/questions/32328179/opencv-3-0-python-lineiterator
 '''
@@ -120,6 +123,8 @@ class SegmentationWidget(Widget):
 
         self.imgWidth = img.shape[1]
         self.imgHeight = img.shape[0]
+        self.flatShape = (self.imgHeight,self.imgWidth,1)
+        self.flatestShape = (self.imgHeight,self.imgWidth)
 
         #attach the image to a texture
         self.texture = Texture.create(size=(self.imgWidth , self.imgHeight), colorfmt="bgr")
@@ -129,17 +134,22 @@ class SegmentationWidget(Widget):
         
         self.imgOut = img
         self.img = img
+        self.intensity = np.average(img,axis=2).astype(np.uint8)
 
         img = np.flip(img,axis=0)
         cv2.imwrite('out2.jpg', img)
 
         #create the graph and do initialization
         self.g = maxflow.Graph[int]()
-        self.nodeids = self.g.add_grid_nodes(img.shape)
-        self.g.add_grid_edges(self.nodeids, 0)
+        self.nodes = self.g.add_grid_nodes(self.flatShape)
+        self.structure = np.array([[0, 1, 0],[1, 0, 1],[0, 1, 0]])
 
-        self.f = np.zeros(img.shape)
-        self.b = np.full(img.shape,np.inf,dtype=np.float)
+
+        self.f = np.zeros(self.flatShape)
+        self.b = np.full(self.flatShape,np.inf,dtype=np.float)
+
+        self.wf = np.zeros(self.flatShape)
+        self.wb = np.zeros(self.flatShape)
 
         with self.canvas.before:
             #attach the texture to the app
@@ -195,15 +205,18 @@ class SegmentationWidget(Widget):
             self.firstTouch = False
         else:
             points = touch.ud['line'].points
-            for i in range(1,len(points)//2):
-                x1 = self.xResize(points[2*(i-1)])
-                y1 = self.yResize(points[2*(i-1)+1])
-                x2 = self.xResize(points[2*i+0])
-                y2 = self.yResize(points[2*i+1])
+            for i in range(1,len(points) // 2):
+                x1 = self.xResize(points[2 * (i - 1)])
+                y1 = self.yResize(points[2 * (i - 1) + 1])
+                x2 = self.xResize(points[2 * i + 0])
+                y2 = self.yResize(points[2 * i + 1])
 
                 buffer = createLineIterator(np.array([x1,y1]).astype(np.int),np.array([x2,y2]).astype(np.int),self.imgOut)
                 for data in buffer:
 
+                    '''
+                    The default draw is Keep. Press s to change it
+                    '''
                     if self.isKeep:
                         self.f[data[1]][data[0]] = np.inf
                         self.b[data[1]][data[0]] = 0.
@@ -212,19 +225,49 @@ class SegmentationWidget(Widget):
                         self.f[data[1]][data[0]] = 0.
                         self.b[data[1]][data[0]] = np.inf
 
+        
+        #do all the graph stuff
+        segments = self.cut()
+
         #remove the lines and update the graph based on this line
         self.canvas.clear()
 
         #create the new image and display it
-        displayMask = self.f
-        displayMask[displayMask == np.inf] = 1.
-        self.imgOut = (self.img * displayMask).astype(np.uint8)
+        self.imgOut = (self.img * segments.astype(int)).astype(np.uint8)
 
         self.texture.blit_buffer(self.imgOut.tostring(), bufferfmt="ubyte", colorfmt="bgr")
 
         self.imgOut = np.flip(self.imgOut,axis=0)
         cv2.imwrite('out2.jpg', self.imgOut)
         self.imgOut = np.flip(self.imgOut,axis=0)
+
+    '''
+    All the graph work goes here
+    '''
+    def cut(self):
+        fHist = cv2.calcHist([self.intensity],[0],self.f.astype(np.uint8),[256],[0,256])
+        bHist = cv2.calcHist([self.intensity],[0],self.b.astype(np.uint8),[256],[0,256])
+
+        #removed logs for sanity
+        self.wf = -lamb * bHist[self.intensity]
+        self.wb = -lamb * fHist[self.intensity]
+
+        diff = np.abs(np.gradient(self.intensity))
+        diff = np.average(diff, axis = 0)
+        self.w = np.exp(-np.square(diff) / (2 * np.square(sigma)))
+
+        #add the weights to the grid
+        self.g.add_grid_edges(self.nodes, weights=1, structure=self.structure,symmetric=False)
+
+        # Add the terminal edges. The [2] are the capacities
+        # of the edges from the source node. The [3]
+        # are the capacities of the edges to the sink node.
+        self.g.add_grid_tedges(self.nodes, self.b, self.f)
+
+        self.g.maxflow()
+
+        return self.g.get_grid_segments(self.nodes)
+
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         if keycode[1] == 's':
