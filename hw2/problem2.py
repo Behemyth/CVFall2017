@@ -4,6 +4,9 @@ import numpy as np
 import maxflow
 
 # app imports
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
@@ -100,8 +103,15 @@ class SegmentationWidget(Widget):
     def __init__(self, *args, **kwargs):
         #init the firsttouch and call the super
         super(SegmentationWidget, self).__init__(*args, **kwargs)
+
         self.firstTouch = True
+        self.isKeep = True
+
         self.bind(size=self._update_rect, pos=self._update_rect)
+
+        #keyboard stuff
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
         imgName = sys.argv[1]
         img = cv2.imread(imgName).astype(np.uint8)
@@ -193,7 +203,11 @@ class SegmentationWidget(Widget):
 
                 buffer = createLineIterator(np.array([x1,y1]).astype(np.int),np.array([x2,y2]).astype(np.int),self.imgOut)
                 for data in buffer:
-                    self.mask[data[1]][data[0]] = 1.
+
+                    if self.isKeep:
+                        self.mask[data[1]][data[0]] = 0.
+                    else:
+                        self.mask[data[1]][data[0]] = 1.
 
         #remove the lines and update the graph based on this line
         self.canvas.clear()
@@ -207,6 +221,15 @@ class SegmentationWidget(Widget):
         cv2.imwrite('out2.jpg', self.imgOut)
         self.imgOut = np.flip(self.imgOut,axis=0)
 
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        if keycode[1] == 's':
+            self.isKeep = not self.isKeep
+
+        return True
+
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
 
     def xResize(self,x):
         return x / self.size[0] * self.imgWidth
