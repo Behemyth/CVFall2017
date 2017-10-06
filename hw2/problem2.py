@@ -275,7 +275,7 @@ class SegmentationWidget(Widget):
         # Add the terminal edges. The [2] are the capacities
         # of the edges from the source node. The [3]
         # are the capacities of the edges to the sink node.
-        self.g.add_grid_tedges(self.nodes, self.wb, self.wf)
+        self.g.add_grid_tedges(self.nodes, self.b, self.f)
 
         self.g.maxflow()
 
