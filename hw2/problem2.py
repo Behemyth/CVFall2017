@@ -24,6 +24,7 @@ import math
 
 sigma = 2
 lamb = 1
+k = 1
 
 '''
 taken from https://stackoverflow.com/questions/32328179/opencv-3-0-python-lineiterator
@@ -134,7 +135,7 @@ class SegmentationWidget(Widget):
         
         self.imgOut = img
         self.img = img
-        self.intensity = np.average(img,axis=2).astype(np.uint8)
+        self.intensity = np.average(img,axis=2).astype(np.uint8).reshape(self.flatShape)
 
         img = np.flip(img,axis=0)
         cv2.imwrite('out2.jpg', img)
@@ -242,40 +243,49 @@ class SegmentationWidget(Widget):
         self.imgOut = np.flip(self.imgOut,axis=0)
 
         self.f = np.flip(self.f,axis=0)
-        cv2.imwrite('fWeights2.jpg', self.f)
+        cv2.imwrite('fMarks2.jpg', self.f)
         self.f = np.flip(self.f,axis=0)
 
         self.b = np.flip(self.b, axis=0)
-        cv2.imwrite('bWeights2.jpg', self.b)
+        cv2.imwrite('bMarks2.jpg', self.b)
         self.b = np.flip(self.b,axis=0)
 
+        self.wf = np.flip(self.wf,axis=0)
+        cv2.imwrite('fWeights2.jpg', self.wf)
+        self.wf = np.flip(self.wf,axis=0)
+
+        self.wb = np.flip(self.wb, axis=0)
+        cv2.imwrite('bWeights2.jpg', self.wb)
+        self.wb = np.flip(self.wb,axis=0)
+
         self.w = np.flip(self.w, axis=0)
-        cv2.imwrite('nWeights2.jpg', self.w)
+        cv2.imwrite('weights2.jpg', self.w)
         self.w = np.flip(self.w,axis=0)
 
     '''
     All the graph work goes here
     '''
     def cut(self):
-        fHist = cv2.calcHist([self.intensity],[0],self.f.astype(np.uint8),[256],[0,256])
-        bHist = cv2.calcHist([self.intensity],[0],self.b.astype(np.uint8),[256],[0,256])
 
-        #removed logs for sanity
-        # #-lamb *log()
-        self.wf = bHist[self.intensity]
-        self.wb =  fHist[self.intensity]
 
-        diff = np.abs(np.gradient(self.intensity))
-        diff = np.average(diff, axis = 0)
+        
+        fMean = np.average(self.intensity[self.f>=1])
+        bMean = np.average(self.intensity[self.b>=1])
+
+        self.wf = -lamb * np.log(np.abs(self.intensity - fMean)/(np.abs(self.intensity - fMean)+np.abs(self.intensity - bMean)))
+        self.wb = -lamb * np.log(np.abs(self.intensity - bMean)/(np.abs(self.intensity - bMean)+np.abs(self.intensity - fMean)))
+
+        diff = np.abs(np.gradient(self.intensity.reshape(self.flatestShape)))
+        diff = np.average(diff, axis = 0).reshape(self.flatShape)
         self.w = np.exp(-np.square(diff) / (2 * np.square(sigma)))
 
         #add the weights to the grid
-        self.g.add_grid_edges(self.nodes, weights=1, structure=self.structure,symmetric=False)
+        self.g.add_grid_edges(self.nodes, weights=self.w, structure=self.structure,symmetric=False)
 
-        # Add the terminal edges. The [2] are the capacities
-        # of the edges from the source node. The [3]
+        # Add the terminal edges.  The [2] are the capacities
+        # of the edges from the source node.  The [3]
         # are the capacities of the edges to the sink node.
-        self.g.add_grid_tedges(self.nodes, self.b, self.f)
+        self.g.add_grid_tedges(self.nodes, self.wf, self.wb)
 
         self.g.maxflow()
 
