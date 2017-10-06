@@ -202,6 +202,8 @@ class SegmentationWidget(Widget):
 
             #change the draw type
             self.firstTouch = False
+
+
             self.bgdModel = np.zeros((1,65),np.float64)
             self.fgdModel = np.zeros((1,65),np.float64)
 
@@ -211,7 +213,7 @@ class SegmentationWidget(Widget):
             self.mask[self.f == np.inf] = 1
             self.mask[self.b == np.inf] = 0
 
-            cv2.grabCut(self.img,self.mask,(xs[0],ys[0],xs[1],ys[1]),self.bgdModel,self.fgdModel,5,cv2.GC_INIT_WITH_RECT)
+            cv2.grabCut(self.img,self.mask,(xs[0],ys[0],xs[1],ys[1]),self.bgdModel,self.fgdModel,1,cv2.GC_INIT_WITH_RECT)
 
         else:
             points = touch.ud['line'].points
@@ -240,20 +242,22 @@ class SegmentationWidget(Widget):
 
             #the opencv implementation
             self.mask, self.bgdModel, self.fgdModel =cv2.grabCut(self.img,self.mask,None,self.bgdModel,self.fgdModel,5,cv2.GC_INIT_WITH_MASK)
-        
-        #do all the graph stuff, our implementation (broken)
-        #segments = self.cut()
 
+        '''
+        #do all the graph stuff, our implementation (broken)
+        segments = self.cut()
+        '''
         #remove the lines and update the graph based on this line
         self.canvas.clear()
-
+        '''
         #create the new image and display it
-        #self.imgOut = (self.img * segments.astype(int)).astype(np.uint8)
+        self.imgOut = (self.img * segments.astype(int)).astype(np.uint8)
+        '''
         
         #alternatively
         mask2 = np.where((self.mask==2)|(self.mask==0),0,1).astype('uint8')
         self.imgOut = self.img*mask2
-
+        
         self.texture.blit_buffer(self.imgOut.tostring(), bufferfmt="ubyte", colorfmt="bgr")
 
         self.imgOut = np.flip(self.imgOut,axis=0)

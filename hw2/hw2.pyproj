@@ -14,7 +14,7 @@
     <InterpreterId>
     </InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>city.jpg</CommandLineArguments>
+    <CommandLineArguments>alien.jpg</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
