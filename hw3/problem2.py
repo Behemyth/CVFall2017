@@ -12,8 +12,6 @@ import random
 import sys
 import math
 
-neighborhood = 5
-
 def GetCorners(image):
     #find the features for the frame image
     #read the frame as grayscale
@@ -43,8 +41,7 @@ def CreateComposite(source,frame, outputName):
  
         pixelTest = GetCorners(frameSource)
 
-        DiffFrames(pixelTest, frameTest)
-
+        difference = DiffFrames(pixelTest, frameTest)
 
         cv2.imshow('Harris Corner Detector',pixelTest.astype(np.uint8)*255)
         if cv2.waitKey(0) & 0xff == 27:
