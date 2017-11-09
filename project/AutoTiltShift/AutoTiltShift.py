@@ -10,6 +10,7 @@ import sys
 
 if __name__ == "__main__":
 
-       videoName = sys.argv[1]
+   videoName = sys.argv[1]
 
+   vidSource = cv2.VideoCapture(videoName)
 
