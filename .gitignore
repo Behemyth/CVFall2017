@@ -262,3 +262,4 @@ __pycache__/
 hw3/out.MOV
 hw3/out.mp4
 hw3/source.mp4
+*.mov
