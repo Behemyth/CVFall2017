@@ -14,4 +14,7 @@ if __name__ == "__main__":
 
     vidSource = cv2.VideoCapture(videoName)
 
-    retSource, frameSource = vidSource.read()
+    while True:
+        ret, frameSource = vidSource.read()
+        if not ret:
+            break
