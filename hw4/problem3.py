@@ -148,7 +148,7 @@ if __name__ == "__main__":
     #write the image
     cv2.imwrite(bestName + "_Warped2.jpg",warpedJ)
 
-    stereo = cv2.StereoBM_create(numDisparities=16, blockSize=7)
+    stereo = cv2.StereoBM_create(numDisparities=16*12, blockSize=9)
 
     grayWarpedI = cv2.cvtColor(warpedI, cv2.COLOR_BGR2GRAY)
     grayWarpedJ = cv2.cvtColor(warpedJ, cv2.COLOR_BGR2GRAY)
