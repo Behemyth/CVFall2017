@@ -1,0 +1,18 @@
+im1Loc = input('Old image file: ','s');
+im2Loc = input('New image file: ','s');
+existingPts = input('Use existing points?');
+
+old = imread(im1Loc);
+new = imread(im2Loc);
+
+if (~existingPts)
+    [oldPts, newPts] = cpselect(old, new, 'Wait', true);
+end
+
+figure
+imshow(im1Loc);
+
+[xin, yin] = getpts;
+[xout, yout] = tpsinterp(xin, yin, oldPts, newPts);
+
+
