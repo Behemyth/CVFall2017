@@ -1,5 +1,5 @@
 function [ color ] = bilinearinterp( x, y, img)
-    if (x > size(img,2) || (y > size(img,1)) || x < 1 || y < 1)
+    if (x >= size(img,2) || (y >= size(img,1)) || x < 1 || y < 1)
         color = [0,0,0];
     else
         x1 = floor(x);

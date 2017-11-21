@@ -35,23 +35,33 @@ wc43 = tpsweights(pts4, pts3);
 wc45 = tpsweights(pts4, pts5);
 wc54 = tpsweights(pts5, pts4);
 
-for i = 1:8
-    outimg = morphfaces(wc12, wc21, im1, im2, pts1, pts2, 1.0/(i-1.0));
-    imwrite(uint8(outimg), strcat(outf, string(i), '.jpg'));
+fprintf('starting animating sequence...\n');
+% for i = 1:8
+%     t = .125 * (i - 1);
+%     outimg = morphfaces(wc12, wc21, im1, im2, pts1, pts2, t);
+%     imwrite(uint8(outimg), sprintf('%s%d.jpg',outf,i));
+%     fprintf('Finished with frame %d\n', i);
+% end
+
+parpool(8);
+parfor i = 1:8
+    t = .125 * (i - 1);
+    outimg = morphfaces(wc23, wc32, im2, im3, pts2, pts3, t);
+    imwrite(uint8(outimg), sprintf('%s%d.jpg',outf,i+8));
+    fprintf('Finished with frame %d\n', i+8);
 end
 
-for i = 1:8
-    outimg = morphfaces(wc23, wc32, im2, im3, pts2, pts3, 1.0/(i-1.0));
-    imwrite(uint8(outimg), strcat(outf, string(i+8), '.jpg'));
+parfor i = 1:8
+    t = .125 * (i - 1);
+    outimg = morphfaces(wc34, wc43, im3, im4, pts3, pts4, t);
+    imwrite(uint8(outimg), sprintf('%s%d.jpg',outf,i+16));
+    fprintf('Finished with frame %d\n', i+16);
 end
 
-for i = 1:8
-    outimg = morphfaces(wc34, wc43, im3, im4, pts3, pts4, 1.0/(i-1.0));
-    imwrite(uint8(outimg), strcat(outf, string(i+16), '.jpg'));
+parfor i = 1:8
+    t = .125 * (i - 1);
+    outimg = morphfaces(wc45, wc54, im4, im5, pts4, pts5, t);
+    imwrite(uint8(outimg), sprintf('%s%d.jpg',outf,i+24));
+    fprintf('Finished with frame %d\n', i+24);
 end
-
-for i = 1:8
-    outimg = morphfaces(wc45, wc54, im4, im5, pts4, pts5, 1.0/(i-1.0));
-    imwrite(uint8(outimg), strcat(outf, string(i+24), '.jpg'));
-end
-
+fprintf('done!\n');
