@@ -15,18 +15,28 @@ end
 figure
 imshow(old);
 
-[xin, yin] = getpts;
-A = [xin,yin];
+A = zeros(6,2);
+for i = 1:6
+    [xin, yin] = getpts;
+    A(i,1:2) = [xin, yin];
+end
+
 % xout = zeros(size(xin), 1);
 % yout = zeros(size(yin), 1);
 
 outputOld = old;
 outputNew = new;
 
-B = arrayfun(@(a) tpsinterp(a(1),a(2),oldPts,newPts),A(:));
+wc = tpsweights(oldPts, newPts);
 
-outputOld = insertMarker(outputOld, A);
-outputNew = insertMarker(outputNew, B);
+B = zeros(6,2);
+for i = 1:6
+    [xout, yout] = tpsinterp(A(i,1),A(i,2),oldPts,wc);
+    B(i,1:2) = [xout,yout];
+end
+
+outputOld = insertMarker(outputOld, A, 'o', 'Size', 5);
+outputNew = insertMarker(outputNew, B, 'o', 'Size', 5);
 
 % for i = 1:size(xin)
 %     [xout(i), yout(i)] = tpsinterp(xin, yin, oldPts, newPts);
@@ -41,3 +51,10 @@ imwrite(uint8(outputOld),strcat(outLoc,'1.jpg'));
 figure
 imshow(uint8(outputNew));
 imwrite(uint8(outputNew),strcat(outLoc,'2.jpg'));
+
+[height, width, depth] = size(outputOld);
+montage = [uint8(outputOld), uint8(outputNew)];
+C = [A, B(:,1) + width, B(:,2)];
+montage = insertShape(montage, 'Line', C, 'LineWidth', 3);
+figure
+imshow(montage);
