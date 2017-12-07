@@ -14,7 +14,7 @@ def Difference(a,b):
 
 def tiltShift(frame, center):
 
-    blurIterations = 5
+    blurIterations = 7
     focus = frame.shape[0]/10
 
     yTopOriginal = center-focus
@@ -50,53 +50,33 @@ def tiltShift(frame, center):
 
     return frame
 
-def findBestVerticle(videoName):
-    vidSource = cv2.VideoCapture(videoName)
+def findBestVerticle(frame,fgbg,kernel):
 
-    ok, prevFrame = vidSource.read()
+    fgmask = fgbg.apply(frame)
+    fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
 
-    return prevFrame.shape[0]/2
+    y,x = np.indices(fgmask.shape)
 
-    #TODO programatically set center
-    # 
+    mask = y[fgmask>=1]
+
+    height = np.average(mask)
     
-    #hog = cv2.HOGDescriptor()
-    #hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    if not height >= 0:
+        height = frame.shape[0]/2
 
-    #avgX = 0
-    #avgY = 0
+    return height
 
-    #boxCount = 0
-
-    #ok, prevFrame = vidSource.read()
-
-    ##second loop for write processing
-    #while True:
-    #    ret, frame = vidSource.read()
-    #    if not ret:
-    #        break
-
-    #    # detect people in the image
-    #    rects, weights = hog.detectMultiScale(frame, winStride=(4, 4),
-    #    padding=(8, 8), scale=1.05)
-
-    #    #average the boxes
-    #    for (x, y, w, h) in rects:
-    #        avgX += x + w / 2.0
-    #        avgY += y + h / 2.0
-    #        boxCount =  boxCount + 1
-
-    #return avgX/boxCount, avgY/boxCount
 
 if __name__ == "__main__":
 
     videoName = sys.argv[1]
  
-    avgY = findBestVerticle(videoName)
-
     #writer info
     cap = cv2.VideoCapture(0)
     vidSource = cv2.VideoCapture(videoName)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
 
     # Define the codec and create VideoWriter object
     out = cv2.VideoWriter("output.avi", 
@@ -106,11 +86,16 @@ if __name__ == "__main__":
 
     ok, prevFrame = vidSource.read()
 
+    frameNumber = 1
     #second loop for write processing
     while True:
         ret, frame = vidSource.read()
         if not ret:
             break
+
+
+        avgY = findBestVerticle(frame,fgbg,kernel)
+
 
         #color changes
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
@@ -131,6 +116,10 @@ if __name__ == "__main__":
         out.write(frame)
 
         prevFrame = frame
+
+        print(frameNumber)
+
+        frameNumber = frameNumber+1
 
     # Release everything if job is finished
     cap.release()
