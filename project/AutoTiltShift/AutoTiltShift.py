@@ -8,7 +8,7 @@ import os
 import random
 import sys
 
-HeadBias = 50
+HeadBias = 15
 changeFactor = 5
 
 #return
@@ -17,7 +17,7 @@ def Difference(a,b):
 
 def tiltShift(frame, center,heights):
 
-    blurIterations = 7
+    blurIterations = 8
     focus = frame.shape[0] / 8
 
     yTopOriginal = int(center - focus)
@@ -33,7 +33,7 @@ def tiltShift(frame, center,heights):
     blurred = frame
 
     for i in range(blurIterations):
-        ksize = (i * 2) + 3
+        ksize = (i * 2) + 1
         blurred = cv2.GaussianBlur(frame,(ksize,ksize),0)
 
         shapeImage = (frame.shape[0],frame.shape[1],1)
