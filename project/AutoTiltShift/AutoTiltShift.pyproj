@@ -12,7 +12,7 @@
     <Name>AutoTiltShift</Name>
     <RootNamespace>AutoTiltShift</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>"Fire Frantic.mp4"</CommandLineArguments>
+    <CommandLineArguments>"Death_track.mp4"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
