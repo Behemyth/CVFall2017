@@ -9,7 +9,7 @@ import random
 import sys
 
 HeadBias = 50
-changeFactor = 4
+changeFactor = 5
 
 #return
 def Difference(a,b):
@@ -149,7 +149,7 @@ if __name__ == "__main__":
          #color changes
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
 
-        saturationAdd = 35
+        saturationAdd = 25
         valueAdd = 20
 
         maskS = 255 - hsv[:,:,1]
