@@ -1,0 +1,16 @@
+Adobe After Effects 8.0 Keyframe Data
+
+	Units Per Second	29.97
+	Source Width	1080
+	Source Height	1920
+	Source Pixel Aspect Ratio	1
+	Comp Pixel Aspect Ratio	1
+
+Motion Trackers	Tracker #1	Track Point #1	Feature Center
+	Frame	X pixels	Y pixels	
+	0	12.000	13.000	
+	1	12.000	13.000	
+
+
+End of Keyframe Data
+
