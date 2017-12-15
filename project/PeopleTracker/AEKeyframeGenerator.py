@@ -19,7 +19,7 @@ def writeDataHeader(f):
 
 def writeData(f, data):
     for i in range(len(data)):
-        f.write('\t%d\t%.3f\t%.3f\t\n' % (i, data[0][0], data[0][1]))
+        f.write('\t%d\t%.3f\t%.3f\t\n' % (i, data[i][0], data[i][1]))
 
 def writeEndOfKeyframeData(f):
     f.write('\n\nEnd of Keyframe Data\n\n')
