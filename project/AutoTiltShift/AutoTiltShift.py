@@ -57,6 +57,8 @@ def findBestVerticle(frame,fgbg,kernel):
 
     y,x = np.indices(fgmask.shape)
 
+    cv2.imwrite("BackgroundMask.png", fgmask)
+
     mask = y[fgmask>=1]
 
     height = np.average(mask)
@@ -78,8 +80,18 @@ if __name__ == "__main__":
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
 
+    pre = videoName.split('.')[0]
+    outName = pre + "_" + "Post.avi"
+    outName2 = pre + "_" + "PostColor.avi"
+
     # Define the codec and create VideoWriter object
-    out = cv2.VideoWriter("output.avi", 
+    out = cv2.VideoWriter(outName, 
+							cv2.VideoWriter_fourcc('m','p','4','v'), 
+							vidSource.get(5),  # setting the frame rate of composite to be same as vidSource
+							(int(vidSource.get(3)), int(vidSource.get(4))), True)  # setting size of composite to be same as vidSource
+
+    # Define the codec and create VideoWriter object
+    outBare = cv2.VideoWriter(outName2, 
 							cv2.VideoWriter_fourcc('m','p','4','v'), 
 							vidSource.get(5),  # setting the frame rate of composite to be same as vidSource
 							(int(vidSource.get(3)), int(vidSource.get(4))), True)  # setting size of composite to be same as vidSource
@@ -96,8 +108,11 @@ if __name__ == "__main__":
 
         avgY = findBestVerticle(frame,fgbg,kernel)
 
+        frame = tiltShift(frame,avgY)
 
-        #color changes
+
+
+         #color changes
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
 
         saturationAdd = 35
@@ -109,12 +124,15 @@ if __name__ == "__main__":
         hsv[:,:,1] = np.where(maskS < saturationAdd,255,hsv[:,:,1] + saturationAdd)
         hsv[:,:,2] = np.where(maskV < valueAdd,255,hsv[:,:,2] + valueAdd)
 
-        frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR) 
+        moddedFrame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR) 
 
-        frame = tiltShift(frame,avgY)
 
+        #writes
+        outBare.write(moddedFrame)
         out.write(frame)
 
+
+        #frame logic
         prevFrame = frame
 
         print(frameNumber)

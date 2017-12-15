@@ -12,7 +12,7 @@
     <Name>AutoTiltShift</Name>
     <RootNamespace>AutoTiltShift</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>input.MOV</CommandLineArguments>
+    <CommandLineArguments>"Grill Fire.mp4"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
